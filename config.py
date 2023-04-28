@@ -75,14 +75,6 @@ def get_args():
     parser.add_argument('--pretrain_emb', type=int, default=768,
                         help='dimension of pretrained model output')
 
-    # Activations
-    parser.add_argument('--mmilb_mid_activation', type=str, default='ReLU',
-                        help='Activation layer type in the middle of all MMILB modules')
-    parser.add_argument('--mmilb_last_activation', type=str, default='Tanh',
-                        help='Activation layer type at the end of all MMILB modules')
-    parser.add_argument('--cpc_activation', type=str, default='Tanh',
-                        help='Activation layer type in all CPC modules')
-
     # Training Setting
     parser.add_argument('--batch_size', type=int, default=32, metavar='N',
                         help='batch size (default: 32)')
@@ -124,27 +116,44 @@ def get_args():
     return args
 
 
-def str2bool(v):
-    """string to boolean"""
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
-
-
 class Config(object):
-    def __init__(self, data, mode='train'):
-        """Configuration Class: set kwargs as class attributes with setattr"""
-        self.dataset_dir = data_dict[data.lower()]
-        # self.sdk_dir = sdk_dir
-        self.mode = mode
-        # Glove path
-        # self.word_emb_path = word_emb_path
+    def __init__(self):
+        """
 
-        # Data Split ex) 'train', 'valid', 'test'
-        self.data_dir = self.dataset_dir
+        """
+
+
+        """
+        OGM config
+        """
+        self.alpha = 0.3
+        """
+        lora config reference on LoraConfig
+        This is the configuration class to store the configuration of a [`~peft.Lora`].
+
+        Args:
+            r (`int`): Lora attention dimension
+            target_modules (`Union[List[str],str]`): The names of the modules to apply Lora to.
+            lora_alpha (`float`): The alpha parameter for Lora scaling.
+            lora_dropout (`float`): The dropout probability for Lora layers.
+            merge_weights (`bool`):
+                Whether to merge the weights of the Lora layers with the base transformer model in `eval` mode.
+            fan_in_fan_out (`bool`): Set this to True if the layer to replace stores weight like (fan_in, fan_out)
+            enable_lora ( `List[bool]`): Used with `lora.MergedLinear`.
+            bias (`str`): Bias type for Lora. Can be 'none', 'all' or 'lora_only'
+            modules_to_save (`List[str]`):List of modules apart from LoRA layers to be set as trainable
+                and saved in the final checkpoint.
+        """
+        self.r = 8
+        self.lora_alpha = 32
+        self.lora_dropout = 0.1
+        self.target_modules = ["query", "value"]
+        self.merge_weights = True # eval模式中，是否将lora矩阵的值加到原有W_0
+        self.inference_mode = False
+        self.fan_in_fan_out = False
+        self.enable_lora = None # Used with `lora.MergedLinear`."
+        self.bias = "none"
+        self.modules_to_save = None
         self.args = get_args()
 
     def __str__(self):
