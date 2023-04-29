@@ -23,6 +23,8 @@ from typing import List, Optional, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+
 # from transformers.pytorch_utils import Conv1D
 
 # from ..utils import PeftConfig, PeftType, transpose
@@ -30,12 +32,14 @@ import torch.nn.functional as F
 def transpose(weight, fan_in_fan_out):
     return weight.T if fan_in_fan_out else weight
 
+
 def is_bnb_available():
     return importlib.util.find_spec("bitsandbytes") is not None
 
 
 if is_bnb_available():
     import bitsandbytes as bnb
+
 
 class LoraModel(torch.nn.Module):
     """
@@ -65,8 +69,8 @@ class LoraModel(torch.nn.Module):
         super().__init__()
         self.peft_config = config
         self.model = model
-        self._find_and_replace() # 找到并替换关键层
-        mark_only_lora_as_trainable(self.model, self.peft_config.bias) # 保留lora参数 其他固定
+        self._find_and_replace()  # 找到并替换关键层
+        mark_only_lora_as_trainable(self.model, self.peft_config.bias)  # 保留lora参数 其他固定
         self.forward = self.model.forward
 
     def _find_and_replace(self):
@@ -178,6 +182,7 @@ class LoraModel(torch.nn.Module):
     def disable_adapter_layers(self):
         self._set_adapter_layers(enabled=False)
 
+
 # had to adapt it for `lora_only` to work
 def mark_only_lora_as_trainable(model: nn.Module, bias: str = "none") -> None:
     for n, p in model.named_parameters():
@@ -199,11 +204,11 @@ def mark_only_lora_as_trainable(model: nn.Module, bias: str = "none") -> None:
 
 class LoraLayer:
     def __init__(
-        self,
-        r: int,
-        lora_alpha: int,
-        lora_dropout: float,
-        merge_weights: bool,
+            self,
+            r: int,
+            lora_alpha: int,
+            lora_dropout: float,
+            merge_weights: bool,
     ):
         self.r = r
         self.lora_alpha = lora_alpha
@@ -221,15 +226,16 @@ class LoraLayer:
 class Linear(nn.Linear, LoraLayer):
     # Lora implemented in a dense layer
     def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        r: int = 0,
-        lora_alpha: int = 1,
-        lora_dropout: float = 0.0,
-        fan_in_fan_out: bool = False,  # Set this to True if the layer to replace stores weight like (fan_in, fan_out)
-        merge_weights: bool = True,
-        **kwargs,
+            self,
+            in_features: int,
+            out_features: int,
+            r: int = 0,
+            lora_alpha: int = 1,
+            lora_dropout: float = 0.0,
+            fan_in_fan_out: bool = False,
+            # Set this to True if the layer to replace stores weight like (fan_in, fan_out)
+            merge_weights: bool = True,
+            **kwargs,
     ):
         nn.Linear.__init__(self, in_features, out_features, **kwargs)
         LoraLayer.__init__(self, r=r, lora_alpha=lora_alpha, lora_dropout=lora_dropout, merge_weights=merge_weights)
@@ -261,14 +267,14 @@ class Linear(nn.Linear, LoraLayer):
             # Merge the weights and mark it
             if self.r > 0:
                 self.weight.data += (
-                    transpose(self.lora_B.weight @ self.lora_A.weight, self.fan_in_fan_out) * self.scaling
+                        transpose(self.lora_B.weight @ self.lora_A.weight, self.fan_in_fan_out) * self.scaling
                 )
             self.merged = True
         elif self.merge_weights and self.merged:
             # Make sure that the weights are not merged
             if self.r > 0:
                 self.weight.data -= (
-                    transpose(self.lora_B.weight @ self.lora_A.weight, self.fan_in_fan_out) * self.scaling
+                        transpose(self.lora_B.weight @ self.lora_A.weight, self.fan_in_fan_out) * self.scaling
                 )
             self.merged = False
 
@@ -281,7 +287,7 @@ class Linear(nn.Linear, LoraLayer):
         if self.disable_adapters:
             if self.r > 0 and self.merged:
                 self.weight.data -= (
-                    transpose(self.lora_B.weight @ self.lora_A.weight, self.fan_in_fan_out) * self.scaling
+                        transpose(self.lora_B.weight @ self.lora_A.weight, self.fan_in_fan_out) * self.scaling
                 )
                 self.merged = False
             return F.linear(x, transpose(self.weight, self.fan_in_fan_out), bias=self.bias)
@@ -297,16 +303,16 @@ class Linear(nn.Linear, LoraLayer):
 class MergedLinear(nn.Linear, LoraLayer):
     # Lora implemented in a dense layer
     def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        r: int = 0,
-        lora_alpha: int = 1,
-        lora_dropout: float = 0.0,
-        enable_lora: List[bool] = [False],
-        fan_in_fan_out: bool = False,
-        merge_weights: bool = True,
-        **kwargs,
+            self,
+            in_features: int,
+            out_features: int,
+            r: int = 0,
+            lora_alpha: int = 1,
+            lora_dropout: float = 0.0,
+            enable_lora: List[bool] = [False],
+            fan_in_fan_out: bool = False,
+            merge_weights: bool = True,
+            **kwargs,
     ):
         nn.Linear.__init__(self, in_features, out_features, **kwargs)
         LoraLayer.__init__(self, r=r, lora_alpha=lora_alpha, lora_dropout=lora_dropout, merge_weights=merge_weights)
@@ -405,13 +411,13 @@ if is_bnb_available():
     class Linear8bitLt(bnb.nn.Linear8bitLt, LoraLayer):
         # Lora implemented in a dense layer
         def __init__(
-            self,
-            in_features,
-            out_features,
-            r: int = 0,
-            lora_alpha: int = 1,
-            lora_dropout: float = 0.0,
-            **kwargs,
+                self,
+                in_features,
+                out_features,
+                r: int = 0,
+                lora_alpha: int = 1,
+                lora_dropout: float = 0.0,
+                **kwargs,
         ):
             bnb.nn.Linear8bitLt.__init__(
                 self,
@@ -457,17 +463,18 @@ if is_bnb_available():
                     result += output
             return result
 
+
     class MergedLinear8bitLt(bnb.nn.Linear8bitLt, LoraLayer):
         # Lora implemented in a dense layer
         def __init__(
-            self,
-            in_features: int,
-            out_features: int,
-            r: int = 0,
-            lora_alpha: int = 1,
-            lora_dropout: float = 0.0,
-            enable_lora: List[bool] = [False],
-            **kwargs,
+                self,
+                in_features: int,
+                out_features: int,
+                r: int = 0,
+                lora_alpha: int = 1,
+                lora_dropout: float = 0.0,
+                enable_lora: List[bool] = [False],
+                **kwargs,
         ):
             bnb.nn.Linear8bitLt.__init__(
                 self,

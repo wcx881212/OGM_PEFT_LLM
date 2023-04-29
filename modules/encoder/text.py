@@ -1,5 +1,5 @@
 from transformers import BertModel, BertConfig, BertTokenizer
-from models.lora import *
+from modules.lora import *
 from torch import nn
 from config import *
 
