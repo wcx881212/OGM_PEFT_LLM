@@ -46,9 +46,9 @@ def get_loader(config, shuffle=True):
         config.n_test = len(dataset)
 
     def collate_fn(batch):
-        '''
+        """
         Collate functions assume batch = [Dataset[i] for i in index_set]
-        '''
+        """
         # for later use we sort the batch in descending order of length
         batch = sorted(batch, key=lambda x: len(x[0][3]), reverse=True)
 
@@ -102,8 +102,9 @@ def get_loader(config, shuffle=True):
         sentences = pad_sequence([torch.LongTensor(sample[0][0]) for sample in batch], padding_value=PAD)
         visual = pad_sequence([torch.FloatTensor(sample[0][1]) for sample in batch], target_len=vlens.max().item())
         acoustic = pad_sequence([torch.FloatTensor(sample[0][2]) for sample in batch], target_len=alens.max().item())
-
-        ## BERT-based features input prep
+        # TODO transpose——>[bacth_size,seq_len,dim]
+        visual, acoustic = torch.transpose(visual, 0, 1), torch.transpose(acoustic, 0, 1)
+        # BERT-based features input prep
         # SENT_LEN = min(sentences.size(0),50)
         sent_len = 50  # TODO 50 or 512
         # Create bert indices using tokenizer

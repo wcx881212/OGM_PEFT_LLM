@@ -1,4 +1,5 @@
 import torch.nn as nn
+from rnn import *
 
 '''
 Input output shapes
@@ -8,20 +9,17 @@ label: (1) -> [sentiment]
 
 
 class AudioEncoder(nn.Module):
-    def __init__(self, features_only=False):
+    def __init__(self, config):
         super(AudioEncoder, self).__init__()
-        self.features_only = features_only
-        self.lstm1 = nn.LSTM(input_size=74, hidden_size=64, num_layers=1, batch_first=True)
-        self.lstm2 = nn.LSTM(input_size=64, hidden_size=64, num_layers=1, batch_first=True)
-
-        self.classifier = nn.Sequential(
-            nn.Dropout(p=0.1),
-            nn.Linear(64, 1),
+        self.acoustic_enc = RNNEncoder(
+            in_size=74,
+            hidden_size=config.hidden,
+            out_size=config.rnn_hidden,
+            num_layers=config.rnn_num_layers,
+            dropout=config.dropout_a if config.rnn_num_layers > 1 else 0.0,
+            bidirectional=config.bidirectional
         )
 
-    def forward(self, x):
-        x, _ = self.lstm1(x)
-        x, _ = self.lstm2(x)
-        last = x[:, -1, :]
-
-        return self.classifier(last)
+    def forward(self, acoustic, a_len):
+        acoustic = self.acoustic_enc(acoustic, a_len)
+        return acoustic

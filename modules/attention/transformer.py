@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from position_emb import SinusoidalPositionalEmbedding
-from multihead_attention import MultiheadAttention
+from modules.attention.position_emb import SinusoidalPositionalEmbedding
+from modules.attention.multihead_attention import MultiheadAttention
 import math
 
 
@@ -83,7 +83,7 @@ class TransformerEncoder(nn.Module):
             else:
                 x = layer(x)
             intermediates.append(x)
-
+        # TODO do layer norm at last
         if self.normalize:
             x = self.layer_norm(x)
 

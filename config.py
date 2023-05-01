@@ -108,9 +108,14 @@ class Config(object):
         self.n_test = 0
         self.batch_size = 32
         self.num_epochs = 40
-        self.optimizer = 'SGD'
-        self.dropout = 0.1
-        self.num_layers = 2
+        self.lr = 1e-5
+        self.momentum = 0.9
+        self.weight_decay = 1e-4
+
+        self.a_rnn_hidden = 16
+        self.a_rnn_num_layers = 1
+        self.a_rnn_dropout = 0.1
+        self.a_rnn_bidirectional = False
 
         """
         OGM config
@@ -122,6 +127,7 @@ class Config(object):
         This is the configuration class to store the configuration of a [`~peft.Lora`].
 
         Args:
+            use_lora (`bool`):Whether use peft method
             r (`int`): Lora attention dimension
             target_modules (`Union[List[str],str]`): The names of the modules to apply Lora to.
             lora_alpha (`float`): The alpha parameter for Lora scaling.
@@ -134,16 +140,11 @@ class Config(object):
             modules_to_save (`List[str]`):List of modules apart from LoRA layers to be set as trainable
                 and saved in the final checkpoint.
         """
+        self.use_lora = True
         self.r = 8
         self.lora_alpha = 32
         self.lora_dropout = 0.1
-        self.target_modules = ["query", "value"]
-        self.merge_weights = True  # eval模式中，是否将lora矩阵的值加到原有W_0
-        self.inference_mode = False
-        self.fan_in_fan_out = False
-        self.enable_lora = None  # Used with `lora.MergedLinear`."
-        self.bias = "none"
-        self.modules_to_save = None
+        self.inference_mode = True
 
 
 def get_config(dataset, mode, batch_size):
